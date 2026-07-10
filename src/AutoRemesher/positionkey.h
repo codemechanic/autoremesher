@@ -22,6 +22,7 @@
 #ifndef AUTO_REMESHER_POSITION_KEY_H
 #define AUTO_REMESHER_POSITION_KEY_H
 #include <AutoRemesher/Vector3>
+#include <cstdint>
 
 namespace AutoRemesher {
 
@@ -34,12 +35,14 @@ public:
     bool operator==(const PositionKey& right) const;
 
 private:
-    long m_intX = 0;
-    long m_intY = 0;
-    long m_intZ = 0;
+    // 64-bit so quantized coordinates don't overflow on LLP64 (Windows), where
+    // `long` is 32-bit and any |coord| > ~21474 would wrap.
+    int64_t m_intX = 0;
+    int64_t m_intY = 0;
+    int64_t m_intZ = 0;
     Vector3 m_position;
 
-    static long m_toIntFactor;
+    static int64_t m_toIntFactor;
 };
 
 }

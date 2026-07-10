@@ -37,7 +37,7 @@
 class ModelShaderWidget : public QOpenGLWidget, protected QOpenGLFunctions {
     Q_OBJECT
 signals:
-    void mouseRayChanged(const QVector3D& near, const QVector3D& far);
+    void mouseRayChanged(const QVector3D& nearPos, const QVector3D& farPos);
     void mousePressed(QPoint globalPos);
     void mouseReleased(QPoint globalPos);
     void addMouseRadius(float radius);
@@ -63,7 +63,6 @@ public:
     void toggleWireframe();
     bool isWireframeVisible();
     void toggleRotation();
-    void toggleUvCheck();
     void enableMove(bool enabled);
     void enableZoom(bool enabled);
     void enableMousePicking(bool enabled);

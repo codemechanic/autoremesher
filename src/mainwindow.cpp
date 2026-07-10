@@ -445,9 +445,14 @@ bool MainWindow::loadObj(const QString& filename)
         return false;
     }
 
-    m_renderQueue.push({ m_originalVertices,
-        m_originalTriangles });
-    checkRenderQueue();
+    // Headless (CLI) mode never displays the mesh, so skip building the render
+    // mesh — it would spin up a render thread the CLI doesn't need and can race
+    // with shutdown.
+    if (!m_headlessMode) {
+        m_renderQueue.push({ m_originalVertices,
+            m_originalTriangles });
+        checkRenderQueue();
+    }
 
     return true;
 }
@@ -531,11 +536,14 @@ void MainWindow::updateProgress(float progress)
 {
 #ifdef Q_OS_WIN32
     m_taskbarButton->progress()->setValue((int)(progress * 100));
+#else
+    Q_UNUSED(progress);
 #endif
 }
 
 void MainWindow::updateProgressDetailed(float progress, const QString& status)
 {
+    Q_UNUSED(status);
     m_progressBar->setValue((int)(progress * 100));
     m_progressBar->show();
 
@@ -754,6 +762,9 @@ bool MainWindow::saveMeshToFile(const QString& filename)
         return false;
     }
     QTextStream stream(&file);
+    // Default precision is 6 significant digits, which loses geometry on export;
+    // 9 round-trips single-precision coordinates faithfully.
+    stream.setRealNumberPrecision(9);
     stream << "# " << APP_NAME << " " << APP_HUMAN_VER << "\n";
     stream << "# " << APP_HOMEPAGE_URL << "\n";
     for (std::vector<AutoRemesher::Vector3>::const_iterator it = m_remeshedVertices->begin(); it != m_remeshedVertices->end(); ++it) {

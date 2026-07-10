@@ -1017,6 +1017,7 @@ void QuadExtractor::searchBoundaries(const std::set<std::pair<size_t, size_t>>& 
         std::vector<size_t> loop;
         size_t startVertex = it->first;
         bool validate = false;
+        std::unordered_set<size_t> visited;
         std::cerr << "Searching loop from:" << startVertex << std::endl;
         while (it != nextMap.end()) {
             if (startVertex == it->first && loop.size() >= 3) {
@@ -1024,6 +1025,11 @@ void QuadExtractor::searchBoundaries(const std::set<std::pair<size_t, size_t>>& 
                 validate = true;
                 break;
             }
+            // Guard against pathological non-manifold boundary graphs (e.g. a
+            // cycle not containing startVertex): revisiting a vertex means this
+            // is not a simple loop, so stop instead of walking forever.
+            if (!visited.insert(it->first).second)
+                break;
             std::cerr << "Loop add vertex:" << it->first << std::endl;
             loop.push_back(it->first);
             if (it->second.size() != 1) {

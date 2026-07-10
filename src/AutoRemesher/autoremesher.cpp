@@ -118,6 +118,15 @@ double AutoRemesher::calculateAverageEdgeLength(const std::vector<Vector3>& vert
 void AutoRemesher::initializeVoxelSize()
 {
     double area = calculateMeshArea(m_vertices, m_triangles);
+    // Guard against a zero target count (default before setTargetTriangleCount)
+    // and a degenerate zero-area mesh, either of which would make voxelSize
+    // inf/0 and produce garbage downstream. Fall back to the average edge length.
+    if (0 == m_targetTriangleCount || area <= 0.0) {
+        m_voxelSize = calculateAverageEdgeLength(m_vertices, m_triangles);
+        if (m_voxelSize <= 0.0)
+            m_voxelSize = 1.0;
+        return;
+    }
     double triangleArea = area / m_targetTriangleCount;
     m_voxelSize = std::sqrt(triangleArea / (0.86602540378 * 0.5));
 #if AUTO_REMESHER_DEBUG
