@@ -214,9 +214,7 @@ QString Theme::compactStylesheet()
     const QString trackBg = "#4A4A4A";
     const QString accent = Theme::green.name(); // #aaebc4
     const QString text = Theme::white.name(); // #f7d9c8
-    const QString handle = Theme::white.name();
     const QString inputBg = "#252525";
-    const QString border = "#353535";
 
     return QStringLiteral(
         // === SLIDERS — flat, geometric, thin tracks ===
@@ -326,7 +324,7 @@ QString Theme::compactStylesheet()
         "  border-color: #2a2a2a;"
         "  color: #525252;"
         "}")
-        .arg(trackBg, text, accent, inputBg, border);
+        .arg(trackBg, text, accent, inputBg);
 }
 
 QWidget* Theme::createHorizontalLineWidget()
