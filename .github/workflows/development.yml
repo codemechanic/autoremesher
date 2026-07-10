@@ -43,10 +43,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libtbb-dev libgl1-mesa-dev xvfb
+          sudo apt-get install -y libtbb-dev libgl1-mesa-dev
       - name: Build application
         run: |
           qmake
           make -j`nproc`
+      # No xvfb / display: the CLI auto-selects Qt's offscreen platform, so the
+      # tests exercise the same headless path a bare server would use.
       - name: Run CLI tests
-        run: xvfb-run -a ./test/run_tests.sh
+        run: ./test/run_tests.sh
