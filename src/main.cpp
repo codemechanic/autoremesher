@@ -52,6 +52,20 @@ struct HeadlessParams {
     double adaptivity = 1.0;
 };
 
+// Detect headless (CLI) mode from the raw arguments, before QApplication is
+// constructed. We can't use QCommandLineParser here because it needs a live
+// QCoreApplication, yet the platform plugin must be chosen before that exists.
+static bool hasHeadlessInputArg(int argc, char** argv)
+{
+    for (int i = 1; i < argc; ++i) {
+        const QString arg = QString::fromLocal8Bit(argv[i]);
+        if (arg == "-i" || arg == "--input"
+            || arg.startsWith("--input=") || arg.startsWith("-i="))
+            return true;
+    }
+    return false;
+}
+
 // Parse and validate the headless (CLI) options. Returns false and fills
 // `error` when an argument is missing, malformed, or out of the documented
 // range so the caller can fail fast with a non-zero exit code.
@@ -114,6 +128,13 @@ static bool parseHeadlessArgs(QCommandLineParser& parser, HeadlessParams& params
 
 int main(int argc, char** argv)
 {
+    // In headless (CLI) mode the tool never shows a window, so default to Qt's
+    // offscreen platform. This lets `autoremesher --input ...` run on machines
+    // with no display / no X server (CI, servers) without needing xvfb. Any
+    // value the user set explicitly is respected.
+    if (hasHeadlessInputArg(argc, argv) && qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM"))
+        qputenv("QT_QPA_PLATFORM", "offscreen");
+
     QApplication app(argc, argv);
 
     QCoreApplication::setApplicationName(APP_NAME);
