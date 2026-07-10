@@ -87,6 +87,10 @@ make -j$(sysctl -n hw.logicalcpu)
 > default. The `export PATH="$(brew --prefix qt@5)/bin:$PATH"` line above fixes it for
 > the current shell — make sure you run it before `qmake`.
 
+> **`make: Nothing to be done for 'first'`?** This is not an error — it means the app is
+> already built (look for `autoremesher.app`). To force a clean rebuild, run
+> `make distclean` first, then re-run `qmake CONFIG+=sdk_no_version_check` and `make`.
+
 ### Running a quick test
 
 AutoRemesher has a CLI mode for headless processing. Try it with one of the [common-3d-test-models](https://github.com/alecjacobson/common-3d-test-models). Use the binary produced by your build:
