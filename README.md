@@ -74,7 +74,8 @@ xcode-select --install
 brew install qt@5 tbb cmake
 
 # Build
-export PATH="/usr/local/opt/qt@5/bin:$PATH"
+# Works on both Apple Silicon (/opt/homebrew) and Intel (/usr/local) Macs
+export PATH="$(brew --prefix qt@5)/bin:$PATH"
 git clone https://github.com/huxingyi/autoremesher.git
 cd autoremesher
 qmake CONFIG+=sdk_no_version_check

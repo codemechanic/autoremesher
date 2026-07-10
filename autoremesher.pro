@@ -453,8 +453,12 @@ win32 {
 }
 
 macx {
-    INCLUDEPATH += /opt/homebrew/opt/tbb/include
-    LIBS += -L/opt/homebrew/opt/tbb/lib -ltbbmalloc_proxy -ltbbmalloc -ltbb
+    # Resolve the Homebrew prefix at configure time so the same .pro works on
+    # both Apple Silicon (/opt/homebrew) and Intel (/usr/local) Macs.
+    TBB_PREFIX = $$system(brew --prefix tbb 2>/dev/null)
+    isEmpty(TBB_PREFIX): TBB_PREFIX = /opt/homebrew/opt/tbb
+    INCLUDEPATH += $$TBB_PREFIX/include
+    LIBS += -L$$TBB_PREFIX/lib -ltbbmalloc_proxy -ltbbmalloc -ltbb
 }
 unix:!macx {
     LIBS += -ltbb -lz -ldl
