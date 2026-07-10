@@ -14,8 +14,8 @@
 #   2. the $AUTOREMESHER_BIN environment variable
 #   3. common build output locations (Linux ./autoremesher, macOS .app, Windows)
 #
-# On a truly headless host, run under a display server, e.g.:
-#   xvfb-run -a test/run_tests.sh
+# In headless (--input) mode the tool auto-selects Qt's offscreen platform, so
+# no display / X server / xvfb is required — this runs anywhere.
 #
 set -u
 
