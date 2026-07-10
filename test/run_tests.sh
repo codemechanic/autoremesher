@@ -14,8 +14,9 @@
 #   2. the $AUTOREMESHER_BIN environment variable
 #   3. common build output locations (Linux ./autoremesher, macOS .app, Windows)
 #
-# In headless (--input) mode the tool auto-selects Qt's offscreen platform, so
-# no display / X server / xvfb is required — this runs anywhere.
+# In headless (--input) mode the tool opens no window and needs no xvfb. On a
+# display-less Linux host it auto-selects Qt's offscreen platform; macOS and
+# Windows use their native platform.
 #
 set -u
 

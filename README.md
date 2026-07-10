@@ -141,7 +141,8 @@ The `test/` directory contains black-box CLI tests that drive the built binary
 ./test/run_tests.sh /path/to/binary # or pass it explicitly
 ```
 
-The tests (and CLI mode in general) run headless — no display or `xvfb` needed.
+The tests open no window and need no `xvfb`; a display-less Linux host uses the
+`offscreen` platform automatically.
 
 ### Quick Start
 
