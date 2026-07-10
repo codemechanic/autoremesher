@@ -128,12 +128,22 @@ static bool parseHeadlessArgs(QCommandLineParser& parser, HeadlessParams& params
 
 int main(int argc, char** argv)
 {
-    // In headless (CLI) mode the tool never shows a window, so default to Qt's
-    // offscreen platform. This lets `autoremesher --input ...` run on machines
-    // with no display / no X server (CI, servers) without needing xvfb. Any
-    // value the user set explicitly is respected.
-    if (hasHeadlessInputArg(argc, argv) && qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM"))
-        qputenv("QT_QPA_PLATFORM", "offscreen");
+    // In headless (CLI) mode the tool never shows a window. On a display-less
+    // Linux host it would otherwise fail to start, so default to Qt's offscreen
+    // platform there. We deliberately scope this to Linux-without-a-display:
+    //   - macOS release bundles only the cocoa plugin (via macdeployqt), and
+    //     cocoa runs fine headless (no window is shown); forcing offscreen would
+    //     abort because that plugin isn't in the app bundle.
+    //   - Windows always has a session and ships/handles its own plugin.
+    //   - A Linux desktop or CI-under-Xvfb has a display and the bundled xcb
+    //     plugin, so only a truly display-less host needs offscreen.
+    // Any platform the user set explicitly (QT_QPA_PLATFORM) is always respected.
+    if (hasHeadlessInputArg(argc, argv) && qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
+#if defined(__linux__)
+        if (qEnvironmentVariableIsEmpty("DISPLAY") && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY"))
+            qputenv("QT_QPA_PLATFORM", "offscreen");
+#endif
+    }
 
     QApplication app(argc, argv);
 
