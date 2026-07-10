@@ -423,13 +423,13 @@ jobs:
           brew install create-dmg
       - name: Build application
         run: |
-          export PATH="/usr/local/opt/qt@5/bin:$PATH"
+          export PATH="$(brew --prefix qt@5)/bin:$PATH"
           qmake CONFIG+=sdk_no_version_check
           CPU_COUNT=$(sysctl -n hw.logicalcpu)
           make -j${CPU_COUNT}
       - name: Generate DMG
         run: |
-          export PATH="/usr/local/opt/qt@5/bin:$PATH"
+          export PATH="$(brew --prefix qt@5)/bin:$PATH"
           # deploy Qt frameworks into the app bundle
           macdeployqt ${GITHUB_WORKSPACE}/autoremesher.app
           # ad-hoc sign so Gatekeeper doesn't report the app as damaged

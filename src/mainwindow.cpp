@@ -752,7 +752,7 @@ void MainWindow::runHeadless()
 
     if (!objLoaded) {
         std::cerr << "Error: Failed to load " << m_currentFilename.toStdString() << std::endl;
-        QCoreApplication::quit();
+        QCoreApplication::exit(1);
         return;
     }
 
@@ -879,7 +879,7 @@ void MainWindow::quadMeshReady()
     } else {
         if (m_headlessMode) {
             std::cerr << "Error: Remeshing produced no result" << std::endl;
-            emit headlessFinished(0, 0, 0, m_headlessTimer.elapsed() / 1000.0);
+            QCoreApplication::exit(1);
             return;
         }
         m_renderQueue.push({ std::vector<AutoRemesher::Vector3>(),
