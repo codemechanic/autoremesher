@@ -23,7 +23,7 @@
 
 namespace AutoRemesher {
 
-long PositionKey::m_toIntFactor = 100000;
+int64_t PositionKey::m_toIntFactor = 100000;
 
 PositionKey::PositionKey(const Vector3& v)
     : PositionKey(v.x(), v.y(), v.z())
@@ -36,9 +36,9 @@ PositionKey::PositionKey(double x, double y, double z)
     m_position.setY(y);
     m_position.setZ(z);
 
-    m_intX = (long)(x * m_toIntFactor);
-    m_intY = (long)(y * m_toIntFactor);
-    m_intZ = (long)(z * m_toIntFactor);
+    m_intX = (int64_t)(x * m_toIntFactor);
+    m_intY = (int64_t)(y * m_toIntFactor);
+    m_intZ = (int64_t)(z * m_toIntFactor);
 }
 
 const Vector3& PositionKey::position() const

@@ -308,7 +308,10 @@ bool Parameterizer::parameterize()
     }
 #endif
 
-    return false;
+    // Completed. (Hard failures inside geogram surface as exceptions, which the
+    // caller's per-island try/catch handles.) Previously this always returned
+    // false, making the bool result meaningless.
+    return true;
 }
 
 }

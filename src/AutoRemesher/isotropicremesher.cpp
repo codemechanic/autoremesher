@@ -73,6 +73,8 @@ bool IsotropicRemesher::remesh()
 void IsotropicRemesher::debugExportObj(const char* filename)
 {
     FILE* fp = fopen(filename, "wb");
+    if (nullptr == fp)
+        return;
     for (const auto& it : m_remeshedVertices) {
         fprintf(fp, "v %f %f %f\n",
             it[0], it[1], it[2]);
