@@ -28,6 +28,7 @@
 #include <QDebug>
 #include <QEventLoop>
 #include <QFile>
+#include <QFileInfo>
 #include <QFontDatabase>
 #include <QScreen>
 #include <QSettings>
@@ -51,24 +52,64 @@ struct HeadlessParams {
     double adaptivity = 1.0;
 };
 
-static HeadlessParams parseHeadlessArgs(QCommandLineParser& parser)
+// Parse and validate the headless (CLI) options. Returns false and fills
+// `error` when an argument is missing, malformed, or out of the documented
+// range so the caller can fail fast with a non-zero exit code.
+static bool parseHeadlessArgs(QCommandLineParser& parser, HeadlessParams& params, QString& error)
 {
-    HeadlessParams params;
     params.inputPath = parser.value("input");
     params.outputPath = parser.value("output");
+
+    if (!QFileInfo::exists(params.inputPath)) {
+        error = QStringLiteral("input file does not exist: %1").arg(params.inputPath);
+        return false;
+    }
+    if (params.outputPath.isEmpty()) {
+        error = QStringLiteral("--output is required when --input is specified");
+        return false;
+    }
+
     if (parser.isSet("report"))
         params.reportPath = parser.value("report");
-    if (parser.isSet("target-quads"))
-        params.targetQuads = parser.value("target-quads").toInt();
-    if (parser.isSet("edge-scaling"))
-        params.edgeScaling = parser.value("edge-scaling").toDouble();
-    if (parser.isSet("sharp-edge"))
-        params.sharpEdgeDegrees = parser.value("sharp-edge").toDouble();
-    if (parser.isSet("smooth-normal"))
-        params.smoothNormalDegrees = parser.value("smooth-normal").toDouble();
-    if (parser.isSet("adaptivity"))
-        params.adaptivity = parser.value("adaptivity").toDouble();
-    return params;
+
+    if (parser.isSet("target-quads")) {
+        bool ok = false;
+        int value = parser.value("target-quads").toInt(&ok);
+        if (!ok || value <= 0) {
+            error = QStringLiteral("--target-quads must be a positive integer");
+            return false;
+        }
+        params.targetQuads = value;
+    }
+
+    // Validate a floating-point option against its documented [lo, hi] range.
+    auto parseRangedDouble = [&](const QString& name, double lo, double hi, double& dest) -> bool {
+        if (!parser.isSet(name))
+            return true;
+        bool ok = false;
+        double value = parser.value(name).toDouble(&ok);
+        if (!ok) {
+            error = QStringLiteral("--%1 must be a number").arg(name);
+            return false;
+        }
+        if (value < lo || value > hi) {
+            error = QStringLiteral("--%1 must be between %2 and %3").arg(name).arg(lo).arg(hi);
+            return false;
+        }
+        dest = value;
+        return true;
+    };
+
+    if (!parseRangedDouble("edge-scaling", 1.0, 4.0, params.edgeScaling))
+        return false;
+    if (!parseRangedDouble("sharp-edge", 30.0, 180.0, params.sharpEdgeDegrees))
+        return false;
+    if (!parseRangedDouble("smooth-normal", 0.0, 180.0, params.smoothNormalDegrees))
+        return false;
+    if (!parseRangedDouble("adaptivity", 0.0, 1.0, params.adaptivity))
+        return false;
+
+    return true;
 }
 
 int main(int argc, char** argv)
@@ -163,9 +204,10 @@ int main(int argc, char** argv)
     mainWindow->setAttribute(Qt::WA_DeleteOnClose);
 
     if (headlessMode) {
-        HeadlessParams params = parseHeadlessArgs(parser);
-        if (params.outputPath.isEmpty()) {
-            std::cerr << "Error: --output is required when --input is specified" << std::endl;
+        HeadlessParams params;
+        QString error;
+        if (!parseHeadlessArgs(parser, params, error)) {
+            std::cerr << "Error: " << error.toStdString() << std::endl;
             return 1;
         }
 
