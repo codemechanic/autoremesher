@@ -28,16 +28,29 @@
 #include <unordered_map>
 #include <unordered_set>
 
+// Verbose progress diagnostics. Compiled out of release builds so the CLI's
+// stderr isn't flooded on every mesh; still available in debug builds.
+#if AUTO_REMESHER_DEBUG
+#define QE_DEBUG(expr)                  \
+    do {                                \
+        std::cerr << expr << std::endl; \
+    } while (0)
+#else
+#define QE_DEBUG(expr) \
+    do {               \
+    } while (0)
+#endif
+
 namespace AutoRemesher {
 
 bool QuadExtractor::extract()
 {
-    std::cerr << "Extract connections..." << std::endl;
+    QE_DEBUG("Extract connections...");
     std::vector<Vector3> crossPoints;
     std::vector<size_t> crossPointSourceTriangles;
     std::set<std::pair<size_t, size_t>> connections;
     extractConnections(&crossPoints, &crossPointSourceTriangles, &connections);
-    std::cerr << "Extract connections done" << std::endl;
+    QE_DEBUG("Extract connections done");
 
 #if AUTO_REMESHER_DEV
     {
@@ -53,7 +66,7 @@ bool QuadExtractor::extract()
     }
 #endif
 
-    std::cerr << "Extract edges..." << std::endl;
+    QE_DEBUG("Extract edges...");
     std::unordered_map<size_t, std::unordered_set<size_t>> edgeConnectMap;
     extractEdges(connections, &edgeConnectMap);
     if (collapseShortEdges(&crossPoints, &edgeConnectMap))
@@ -62,7 +75,7 @@ bool QuadExtractor::extract()
     if (removeSingleEndpoints(&crossPoints, &edgeConnectMap))
         simplifyGraph(edgeConnectMap);
 
-    std::cerr << "Extract edges done" << std::endl;
+    QE_DEBUG("Extract edges done");
 
 #if AUTO_REMESHER_DEV
     {
@@ -93,9 +106,9 @@ bool QuadExtractor::extract()
     }
 #endif
 
-    std::cerr << "Extract mesh..." << std::endl;
+    QE_DEBUG("Extract mesh...");
     extractMesh(crossPoints, crossPointSourceTriangles, edgeConnectMap, &m_remeshedPolygons);
-    std::cerr << "Extract mesh done" << std::endl;
+    QE_DEBUG("Extract mesh done");
 
     fixHoles();
 
@@ -226,6 +239,7 @@ void QuadExtractor::simplifyGraph(std::unordered_map<size_t, std::unordered_set<
 bool QuadExtractor::removeSingleEndpoints(std::vector<Vector3>* crossPoints,
     std::unordered_map<size_t, std::unordered_set<size_t>>* edgeConnectMap)
 {
+    (void)crossPoints; // signature symmetry with collapse*(); not needed here
     bool removed = false;
     std::unordered_map<size_t, std::unordered_set<size_t>>& graph = *edgeConnectMap;
     std::vector<size_t> endpoints;
@@ -319,7 +333,7 @@ bool QuadExtractor::collapseTriangles(std::vector<Vector3>* crossPoints,
         clusters.push_back(group);
     }
 
-    std::cerr << "collapseTriangles clusters:" << clusters.size() << std::endl;
+    QE_DEBUG("collapseTriangles clusters:" << clusters.size());
 
     for (const auto& group : clusters) {
         Vector3 center;
@@ -328,9 +342,9 @@ bool QuadExtractor::collapseTriangles(std::vector<Vector3>* crossPoints,
         center /= group.size();
         (*crossPoints)[group[0]] = center;
 
-        std::cerr << "group:" << group.size() << std::endl;
+        QE_DEBUG("group:" << group.size());
         for (size_t i = 0; i < group.size(); ++i)
-            std::cerr << "group[" << i << "]:" << group[i] << std::endl;
+            QE_DEBUG("group[" << i << "]:" << group[i]);
 
         std::unordered_set<size_t> moveNeighbors;
         for (size_t i = 1; i < group.size(); ++i) {
@@ -721,7 +735,7 @@ void QuadExtractor::extractConnections(std::vector<Vector3>* crossPoints,
     };
 
     for (size_t triangleIndex = 0; triangleIndex < m_triangles->size(); ++triangleIndex) {
-        //std::cerr << "Extract connections for triangle:" << triangleIndex << "..." << std::endl;
+        //QE_DEBUG("Extract connections for triangle:" << triangleIndex << "...");
 
         const auto& cornerUvs = (*m_triangleUvs)[triangleIndex];
         const auto& cornerIndices = (*m_triangles)[triangleIndex];
@@ -801,7 +815,7 @@ void QuadExtractor::extractConnections(std::vector<Vector3>* crossPoints,
             }
         }
 
-        //std::cerr << "Segment lines by isolines for triangle:" << triangleIndex << "..." << std::endl;
+        //QE_DEBUG("Segment lines by isolines for triangle:" << triangleIndex << "...");
 
         // Segment lines by isolines
         for (size_t i = 0; i < 2; ++i) {
@@ -838,7 +852,7 @@ void QuadExtractor::extractConnections(std::vector<Vector3>* crossPoints,
                             if (segmentPosition < fromPosition || segmentPosition > toPosition)
                                 continue;
                             double ratio = (segmentPosition - fromPosition) / distance;
-                            //std::cerr << "Split at ratio:" << ratio << std::endl;
+                            //QE_DEBUG("Split at ratio:" << ratio);
                             Vector3 position3 = segment[fromIndex].position3 * (1 - ratio) + segment[toIndex].position3 * ratio;
                             Vector2 position2 = segment[fromIndex].position2 * (1 - ratio) + segment[toIndex].position2 * ratio;
                             int integer = segment[toIndex].integer;
@@ -903,10 +917,10 @@ void QuadExtractor::fixHoles()
     searchBoundaries(m_halfEdges, &loops);
     for (auto& loop : loops) {
         if (loop.size() > 65) {
-            std::cerr << "Ignore long hole at length:" << loop.size() << std::endl;
+            QE_DEBUG("Ignore long hole at length:" << loop.size());
             continue;
         }
-        std::cerr << "Fixing hole at length:" << loop.size() << "..." << std::endl;
+        QE_DEBUG("Fixing hole at length:" << loop.size() << "...");
         fixHoleWithQuads(loop, true);
         if (loop.size() >= 4)
             fixHoleWithQuads(loop, false);
@@ -925,7 +939,7 @@ void QuadExtractor::fixHoleWithQuads(std::vector<size_t>& hole, bool checkScore)
 
     for (;;) {
         if (hole.size() <= 2) {
-            std::cerr << "fixHoleWithQuads cancel on edge length:" << hole.size() << std::endl;
+            QE_DEBUG("fixHoleWithQuads cancel on edge length:" << hole.size());
             return;
         }
 
@@ -959,7 +973,7 @@ void QuadExtractor::fixHoleWithQuads(std::vector<size_t>& hole, bool checkScore)
             const auto& score = edgeScores[edgeIndex];
             if (checkScore) {
                 if (score.second <= 0) {
-                    std::cerr << "fixHoleWithQuads failed, highest score(dot):" << score.second << std::endl;
+                    QE_DEBUG("fixHoleWithQuads failed, highest score(dot):" << score.second);
                     return;
                 }
             }
@@ -969,7 +983,7 @@ void QuadExtractor::fixHoleWithQuads(std::vector<size_t>& hole, bool checkScore)
             int k = (j + 1) % hole.size();
             std::vector<size_t> candidate = { (size_t)hole[k], (size_t)hole[j], (size_t)hole[i], (size_t)hole[h] };
             if (m_halfEdges.end() != m_halfEdges.find({ candidate[0], candidate[1] }) || m_halfEdges.end() != m_halfEdges.find({ candidate[1], candidate[2] }) || m_halfEdges.end() != m_halfEdges.find({ candidate[2], candidate[3] }) || m_halfEdges.end() != m_halfEdges.find({ candidate[3], candidate[0] })) {
-                std::cerr << "fixHoleWithQuads ignore score:" << score.second << " because conflicts with existed quads" << std::endl;
+                QE_DEBUG("fixHoleWithQuads ignore score:" << score.second << " because conflicts with existed quads");
                 continue;
             }
             std::vector<size_t> remainPoints;
@@ -979,7 +993,7 @@ void QuadExtractor::fixHoleWithQuads(std::vector<size_t>& hole, bool checkScore)
                 remainPoints.push_back(hole[w]);
             }
             if (testPointInTriangle(m_remeshedVertices, { candidate[0], candidate[1], candidate[2] }, remainPoints) || testPointInTriangle(m_remeshedVertices, { candidate[2], candidate[3], candidate[0] }, remainPoints)) {
-                std::cerr << "fixHoleWithQuads ignore score:" << score.second << " because other point in the same loop fall into quad plane" << std::endl;
+                QE_DEBUG("fixHoleWithQuads ignore score:" << score.second << " because other point in the same loop fall into quad plane");
                 continue;
             }
             m_remeshedPolygons.push_back(candidate);
@@ -1003,7 +1017,7 @@ void QuadExtractor::fixHoleWithQuads(std::vector<size_t>& hole, bool checkScore)
 void QuadExtractor::searchBoundaries(const std::set<std::pair<size_t, size_t>>& halfEdges,
     std::vector<std::vector<size_t>>* loops)
 {
-    std::cerr << "Searching boundaries..." << std::endl;
+    QE_DEBUG("Searching boundaries...");
 
     std::unordered_map<size_t, std::unordered_set<size_t>> nextMap;
     for (const auto& it : halfEdges) {
@@ -1018,10 +1032,10 @@ void QuadExtractor::searchBoundaries(const std::set<std::pair<size_t, size_t>>& 
         size_t startVertex = it->first;
         bool validate = false;
         std::unordered_set<size_t> visited;
-        std::cerr << "Searching loop from:" << startVertex << std::endl;
+        QE_DEBUG("Searching loop from:" << startVertex);
         while (it != nextMap.end()) {
             if (startVertex == it->first && loop.size() >= 3) {
-                std::cerr << "Found valid loop, size:" << loop.size() << std::endl;
+                QE_DEBUG("Found valid loop, size:" << loop.size());
                 validate = true;
                 break;
             }
@@ -1030,10 +1044,10 @@ void QuadExtractor::searchBoundaries(const std::set<std::pair<size_t, size_t>>& 
             // is not a simple loop, so stop instead of walking forever.
             if (!visited.insert(it->first).second)
                 break;
-            std::cerr << "Loop add vertex:" << it->first << std::endl;
+            QE_DEBUG("Loop add vertex:" << it->first);
             loop.push_back(it->first);
             if (it->second.size() != 1) {
-                std::cerr << "Break loop, because of next size:" << it->second.size() << std::endl;
+                QE_DEBUG("Break loop, because of next size:" << it->second.size());
                 break;
             }
             it = nextMap.find(*it->second.begin());
@@ -1044,7 +1058,7 @@ void QuadExtractor::searchBoundaries(const std::set<std::pair<size_t, size_t>>& 
             loops->push_back(loop);
     }
 
-    std::cerr << "Searching boundaries done" << std::endl;
+    QE_DEBUG("Searching boundaries done");
 }
 
 bool QuadExtractor::removeIsolatedFaces()

@@ -41,7 +41,19 @@ static inline QPoint mouseEventGlobalPos(QMouseEvent* event)
 }
 
 bool ModelShaderWidget::m_transparent = true;
+QString ModelShaderWidget::m_openGLVersion;
+QString ModelShaderWidget::m_openGLShadingLanguageVersion;
 float ModelShaderWidget::m_minZoomRatio = 5.0;
+
+QString ModelShaderWidget::openGLVersion()
+{
+    return m_openGLVersion;
+}
+
+QString ModelShaderWidget::openGLShadingLanguageVersion()
+{
+    return m_openGLShadingLanguageVersion;
+}
 float ModelShaderWidget::m_maxZoomRatio = 80.0;
 
 int ModelShaderWidget::m_defaultXRotation = 30 * 16;
@@ -196,6 +208,11 @@ void ModelShaderWidget::initializeGL()
     if (nullptr != versionString && '\0' != versionString[0] && 0 == strstr(versionString, "Mesa")) {
         isCoreProfile = format().profile() == QSurfaceFormat::CoreProfile;
     }
+    // Capture the driver strings now, while a context is current, for the About
+    // dialog (which has no GL context of its own).
+    m_openGLVersion = QString::fromUtf8(versionString ? versionString : "");
+    const char* glslString = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    m_openGLShadingLanguageVersion = QString::fromUtf8(glslString ? glslString : "");
     qDebug() << "isCoreProfile:" << isCoreProfile << "versionString:" << versionString;
 
     m_program = new ModelShaderProgram(isCoreProfile);
