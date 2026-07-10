@@ -98,6 +98,20 @@ AutoRemesher has a CLI mode for headless processing. Try it with one of the [com
     --adaptivity 1.0
 ```
 
+### Running the tests
+
+The `test/` directory contains black-box CLI tests that drive the built binary
+(exit codes, argument validation, and a valid remesh producing a quad mesh):
+
+```bash
+# after building
+./test/run_tests.sh                 # auto-detects the binary
+./test/run_tests.sh /path/to/binary # or pass it explicitly
+
+# on a headless host (no display), run under a virtual framebuffer:
+xvfb-run -a ./test/run_tests.sh
+```
+
 ### Quick Start
 
 #### Windows
