@@ -206,6 +206,7 @@ void AutoRemesher::resample(std::vector<Vector3>& vertices,
     double smoothNormalDegrees,
     size_t islandIndex)
 {
+    (void)islandIndex; // only referenced in AUTO_REMESHER_DEBUG logging below
     std::vector<double> vertexTargetLengths;
     if (adaptivity > 0.0 && !vertices.empty()) {
         const double isoAdaptivity = adaptivity;

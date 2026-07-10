@@ -31,6 +31,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLWidget>
+#include <QString>
 #include <QTimer>
 #include <QVector2D>
 
@@ -59,6 +60,11 @@ public:
     {
         m_transparent = t;
     }
+    // OpenGL driver strings, captured once a context is current (see
+    // initializeGL). Empty until the 3D view has initialized. Querying them via
+    // glGetString from elsewhere (e.g. the About dialog) has no current context.
+    static QString openGLVersion();
+    static QString openGLShadingLanguageVersion();
     void updateMesh(ModelShaderMesh* mesh);
     void toggleWireframe();
     bool isWireframeVisible();
@@ -124,6 +130,8 @@ private:
     float m_mousePickRadius = 0.0;
     QVector3D m_eyePosition = m_defaultEyePosition;
     static bool m_transparent;
+    static QString m_openGLVersion;
+    static QString m_openGLShadingLanguageVersion;
     static float m_minZoomRatio;
     static float m_maxZoomRatio;
     QPoint m_moveStartPos;
