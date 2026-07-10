@@ -124,9 +124,11 @@ Invalid or out-of-range arguments are rejected with a message and a non-zero exi
 code; a successful remesh exits `0`. This makes the CLI safe to drive from scripts
 and CI.
 
-When `--input` is given, the tool runs fully headless — it automatically selects Qt's
-`offscreen` platform, so it works on servers and CI with no display (no `xvfb` needed).
-Set `QT_QPA_PLATFORM` yourself to override.
+When `--input` is given, the tool runs headless and never opens a window. On a
+display-less Linux host it automatically selects Qt's `offscreen` platform, so it
+works on servers and CI with no `X`/`Wayland` display (no `xvfb` needed); on macOS
+and Windows it uses the native platform. Set `QT_QPA_PLATFORM` yourself to override on
+any platform.
 
 ### Running the tests
 

@@ -86,6 +86,19 @@ jobs:
           # Run linuxdeployqt on the desktop file to bundle non-Qt libs
           ./ci/linuxdeployqt.AppImage appdir/usr/share/applications/autoremesher.desktop -bundle-non-qt-libs -verbose=2
 
+          # Bundle the offscreen platform plugin so `--input` works on display-less
+          # Linux hosts. (The release CLI test below runs under Xvfb and uses xcb,
+          # so this is for end users on headless servers.) Best-effort: don't fail
+          # the build if the plugin can't be located.
+          OFFSCREEN_SRC="$(find "${Qt5_Dir:-${QT_ROOT_DIR:-/opt}}" /usr/lib -name 'libqoffscreen.so' -path '*platforms*' 2>/dev/null | head -1)"
+          if [ -n "$OFFSCREEN_SRC" ]; then
+            mkdir -p appdir/usr/plugins/platforms
+            cp "$OFFSCREEN_SRC" appdir/usr/plugins/platforms/
+            echo "✓ Bundled offscreen platform plugin from $OFFSCREEN_SRC"
+          else
+            echo "WARNING: libqoffscreen.so not found; headless-without-display may not work from the AppImage"
+          fi
+
           # Verify binary still exists after linuxdeployqt
           if [ ! -f appdir/usr/bin/autoremesher ]; then
             echo "ERROR: Binary was removed by linuxdeployqt"
