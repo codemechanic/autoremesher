@@ -32,7 +32,7 @@ inconsistency in **ISSUE-3** (and to missing deps).
 | 7 | ISSUE-6 | Duplicate `PLATFORM = "Unknown"` in `.pro` | P2 | XS | ✅ Fixed |
 | 8 | ISSUE-8 | README build-doc nits | P2 | S | ✅ Fixed |
 | 9 | ISSUE-11 | Unfilled `%1–%4` placeholders in compact stylesheet | P2 | S | ✅ Fixed |
-| 10 | ISSUE-9 | Headless still requires GUI + display | P3 | L | Open |
+| 10 | ISSUE-9 | Headless still requires GUI + display | P3 | L | ✅ Fixed |
 | 11 | ISSUE-10 | Large vendored `thirdparty/` in-tree | P3 | L | Open |
 
 **Sequencing notes:**
@@ -232,6 +232,15 @@ no-op without a GUI.
 **Recommended fix (larger)**
 Split a genuine headless path that uses `QCoreApplication`/`QGuiApplication`, skips
 theming, and drives the remesh pipeline directly without the render widgets.
+
+**Resolution (shipped)**
+Rather than the widget-free rewrite, headless mode now **auto-selects Qt's `offscreen`
+platform** (`src/main.cpp`) when `--input` is present and `QT_QPA_PLATFORM` is unset.
+The remesh pipeline never shows a window, so no display / X server / `xvfb` is needed —
+`autoremesher --input …` runs on bare servers and CI out of the box. This reuses the
+fully-tested pipeline at near-zero risk; the CI `cli-tests` job dropped `xvfb`
+accordingly. The full `QCoreApplication` split remains a possible future optimization
+if GUI-object construction cost during CLI startup ever matters.
 
 ---
 
