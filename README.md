@@ -161,4 +161,7 @@ AutoRemesher is licensed under the MIT License - see the [LICENSE](https://githu
 
 See the full [ACKNOWLEDGEMENTS](https://github.com/huxingyi/autoremesher/blob/master/ACKNOWLEDGEMENTS.html) for a list of libraries and resources used in this project.
 
+The bundled third-party dependencies (versions, licenses, upstream URLs, and local
+patches) are documented in [`thirdparty/README.md`](thirdparty/README.md).
+
 <!-- Sponsors begin --><!-- Sponsors end -->

@@ -33,7 +33,7 @@ inconsistency in **ISSUE-3** (and to missing deps).
 | 8 | ISSUE-8 | README build-doc nits | P2 | S | ✅ Fixed |
 | 9 | ISSUE-11 | Unfilled `%1–%4` placeholders in compact stylesheet | P2 | S | ✅ Fixed |
 | 10 | ISSUE-9 | Headless still requires GUI + display | P3 | L | ✅ Fixed |
-| 11 | ISSUE-10 | Large vendored `thirdparty/` in-tree | P3 | L | Open |
+| 11 | ISSUE-10 | Large vendored `thirdparty/` in-tree | P3 | L | ✅ Fixed |
 
 **Sequencing notes:**
 - Do **ISSUE-1 before ISSUE-2** — the exit-code fix is unreachable while the process
@@ -255,6 +255,17 @@ provenance and security updates hard to track.
 **Recommended fix**
 Move to git submodules or a documented vendoring script that records upstream
 version/commit for each dependency.
+
+**Resolution (shipped)**
+Submodules were ruled out: the vendored **geogram 1.8.3** carries functional local
+patches (`NL/nl_blas.c` BLAS, `nl_linkage.h` build fix, `exploragram/hexdom/quad_cover.cpp`
+crash fallback, plus a project-added `geogram_report_progress.h`) that pristine upstream
+submodules would silently drop and break the build. Instead added
+[`thirdparty/README.md`](thirdparty/README.md) — a provenance manifest recording each
+dependency's version, license, upstream URL, and local modifications, plus an
+"Updating a dependency" procedure that mandates re-applying the listed patches and
+recording the pinned commit. This gives the provenance/audit trail a submodule pin would,
+without the regression risk.
 
 ---
 
