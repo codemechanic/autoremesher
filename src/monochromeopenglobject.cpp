@@ -58,4 +58,6 @@ void MonochromeOpenGLObject::cleanup()
     m_meshIsDirty = false;
     if (m_buffer.isCreated())
         m_buffer.destroy();
+    if (m_vertexArrayObject.isCreated())
+        m_vertexArrayObject.destroy();
 }

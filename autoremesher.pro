@@ -90,9 +90,14 @@ unix:!macx {
 	QMAKE_CXXFLAGS_RELEASE -= -O2
 
 	QMAKE_CXXFLAGS_RELEASE += -O3
-	# LTO, aggressive loop unrolling, and x86-64-v2 baseline for broad CPU compatibility
-	QMAKE_CXXFLAGS_RELEASE += -flto -funroll-loops -march=x86-64-v2
+	# LTO and aggressive loop unrolling on all unix targets.
+	QMAKE_CXXFLAGS_RELEASE += -flto -funroll-loops
 	QMAKE_LFLAGS_RELEASE += -flto
+	# The x86-64-v2 baseline only applies to x86-64 hosts; on aarch64/ARM Linux
+	# the flag is rejected and the release build would fail.
+	contains(QMAKE_HOST.arch, x86_64) {
+		QMAKE_CXXFLAGS_RELEASE += -march=x86-64-v2
+	}
 }
 
 win32 {
