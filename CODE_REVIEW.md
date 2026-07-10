@@ -234,13 +234,18 @@ Split a genuine headless path that uses `QCoreApplication`/`QGuiApplication`, sk
 theming, and drives the remesh pipeline directly without the render widgets.
 
 **Resolution (shipped)**
-Rather than the widget-free rewrite, headless mode now **auto-selects Qt's `offscreen`
-platform** (`src/main.cpp`) when `--input` is present and `QT_QPA_PLATFORM` is unset.
-The remesh pipeline never shows a window, so no display / X server / `xvfb` is needed —
-`autoremesher --input …` runs on bare servers and CI out of the box. This reuses the
-fully-tested pipeline at near-zero risk; the CI `cli-tests` job dropped `xvfb`
-accordingly. The full `QCoreApplication` split remains a possible future optimization
-if GUI-object construction cost during CLI startup ever matters.
+Rather than the widget-free rewrite, headless mode reuses the fully-tested pipeline and
+selects a display-free Qt platform only where needed. `autoremesher --input …` never
+shows a window, so on a **display-less Linux host** (`DISPLAY`/`WAYLAND_DISPLAY` unset)
+it auto-selects the `offscreen` platform and runs on bare servers and CI without
+`xvfb`; macOS uses the always-bundled `cocoa` plugin and Windows its native plugin
+(both run headless without showing a window). An explicit `QT_QPA_PLATFORM` is always
+respected. The CI `cli-tests` job dropped `xvfb` accordingly.
+
+> The auto-selection was initially applied on all platforms, which crashed the packaged
+> macOS app (macdeployqt bundles only `cocoa`, so forcing `offscreen` aborted); it was
+> subsequently scoped to Linux-without-a-display. The full `QCoreApplication` split
+> remains a possible future optimization if CLI startup cost ever matters.
 
 ---
 

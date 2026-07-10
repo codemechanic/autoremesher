@@ -1,3 +1,15 @@
+Unreleased
+- Command-line interface: validate options and exit non-zero on invalid or out-of-range arguments
+- Reject malformed .obj input (out-of-range face indices) and empty geometry with a clear error instead of crashing or hanging
+- Report output/report write failures instead of exiting successfully
+- Run the CLI headless with no display: auto-select the offscreen Qt platform on display-less Linux; macOS and Windows use their native platform (no xvfb needed)
+- macOS: build on both Apple Silicon and Intel Homebrew prefixes; use the Accelerate framework; fix a packaged-app CLI platform crash
+- Linux: fix the release build on aarch64/ARM
+- Contain per-island parameterization failures so one degenerate island no longer aborts the whole remesh; fix memory/resource leaks and cross-thread worker teardown
+- Quiet verbose CLI diagnostics; warning-clean release build
+- Add a black-box CLI test suite (run via test/run_tests.sh) and a CI test job
+- Document bundled third-party dependencies in thirdparty/README.md
+
 1.0.0
 - Relicense from GPLv3 to MIT (reimplemented MIT-incompatible dependencies)
 - Improve parameterizer, isotropic remesher, and quad extraction algorithms
