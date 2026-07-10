@@ -1,6 +1,6 @@
 # AutoRemesher
 
-AutoRemesher is a cross-platform automatic quad remeshing tool that converts high-polygon meshes into clean quad-based topology. It is built on top of libraries: [Geogram](https://github.com/BrunoLevy/geogram), [libigl](https://github.com/libigl), [isotropicremesher](https://github.com/huxingyi/isotropicremesher) and [others](https://github.com/huxingyi/autoremesher/blob/master/ACKNOWLEDGEMENTS.html).
+AutoRemesher is a cross-platform automatic quad remeshing tool that converts high-polygon meshes into clean quad-based topology. It is built on top of [Geogram](https://github.com/BrunoLevy/geogram), [Eigen](https://gitlab.com/libeigen/eigen), [Intel TBB](https://github.com/oneapi-src/oneTBB), [isotropicremesher](https://github.com/huxingyi/isotropicremesher) and [others](https://github.com/huxingyi/autoremesher/blob/master/ACKNOWLEDGEMENTS.html). Bundled dependency versions and licenses are listed in [`thirdparty/README.md`](thirdparty/README.md).
 
 Buy me a coffee for staying up late coding :-) [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=GHALWLWXYGCU6&item_name=Support+me+coding+in+my+spare+time&currency_code=AUD&source=url)
 
@@ -14,8 +14,9 @@ These instructions will get you a copy of **AutoRemesher** up and running on you
 
 - C++ compiler with C++14 support (GCC, Clang, or MSVC)
 - Qt 5.15.2
-- TBB (Intel Threading Building Blocks)
-- CMake 3.12 or later (only needed on Windows to build TBB from source)
+- TBB (Intel Threading Building Blocks) — installed from a package manager on
+  Linux/macOS, or built from the bundled source on Windows
+- CMake 3.12 or later (only needed on Windows, to build TBB from source)
 
 ### Building
 
@@ -70,8 +71,8 @@ The release binary will be at `release\autoremesher.exe`.
 # Install Xcode Command Line Tools
 xcode-select --install
 
-# Install dependencies via Homebrew
-brew install qt@5 tbb cmake
+# Install dependencies via Homebrew (TBB is prebuilt; CMake is not needed on macOS)
+brew install qt@5 tbb
 
 # Build
 # Works on both Apple Silicon (/opt/homebrew) and Intel (/usr/local) Macs
@@ -88,7 +89,11 @@ make -j$(sysctl -n hw.logicalcpu)
 
 ### Running a quick test
 
-AutoRemesher has a CLI mode for headless processing. Try it with one of the [common-3d-test-models](https://github.com/alecjacobson/common-3d-test-models):
+AutoRemesher has a CLI mode for headless processing. Try it with one of the [common-3d-test-models](https://github.com/alecjacobson/common-3d-test-models). Use the binary produced by your build:
+
+- **Linux:** `./autoremesher`
+- **macOS:** `./autoremesher.app/Contents/MacOS/autoremesher`
+- **Windows:** `release\autoremesher.exe`
 
 ```bash
 ./autoremesher \
@@ -101,6 +106,23 @@ AutoRemesher has a CLI mode for headless processing. Try it with one of the [com
     --smooth-normal 0.0 \
     --adaptivity 1.0
 ```
+
+#### Command-line options
+
+| Option | Argument | Default | Notes |
+|--------|----------|---------|-------|
+| `-i`, `--input` | `<file.obj>` | — | Input triangle mesh. Enables headless mode. |
+| `-o`, `--output` | `<file.obj>` | — | Output quad mesh. Required when `--input` is given. |
+| `--report` | `<file.txt>` | *(none)* | Optional run report (quads, non-quads, vertices, time). |
+| `--target-quads` | integer | `50000` | Approximate target quad count. Must be positive. |
+| `--edge-scaling` | float | `1.0` | Edge length scaling. Range `1.0`–`4.0`. |
+| `--sharp-edge` | degrees | `90.0` | Dihedral angle above which an edge is treated as sharp. Range `30`–`180`. |
+| `--smooth-normal` | degrees | `0.0` | Normal-smoothing angle for low-poly output. Range `0`–`180`. |
+| `--adaptivity` | float | `1.0` | Curvature-adaptive quad density. Range `0.0`–`1.0`. |
+
+Invalid or out-of-range arguments are rejected with a message and a non-zero exit
+code; a successful remesh exits `0`. This makes the CLI safe to drive from scripts
+and CI.
 
 When `--input` is given, the tool runs fully headless — it automatically selects Qt's
 `offscreen` platform, so it works on servers and CI with no display (no `xvfb` needed).
