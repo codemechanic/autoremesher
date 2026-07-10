@@ -512,21 +512,11 @@ void MainWindow::saveMesh()
     if (!filename.endsWith(".obj"))
         filename += ".obj";
 
-    QFile file(filename);
-    if (file.open(QIODevice::WriteOnly)) {
-        QTextStream stream(&file);
-        stream << "# " << APP_NAME << " " << APP_HUMAN_VER << "\n";
-        stream << "# " << APP_HOMEPAGE_URL << "\n";
-        for (std::vector<AutoRemesher::Vector3>::const_iterator it = m_remeshedVertices->begin(); it != m_remeshedVertices->end(); ++it) {
-            stream << "v " << (*it).x() << " " << (*it).y() << " " << (*it).z() << "\n";
-        }
-        for (std::vector<std::vector<size_t>>::const_iterator it = m_remeshedQuads->begin(); it != m_remeshedQuads->end(); ++it) {
-            stream << "f";
-            for (std::vector<size_t>::const_iterator subIt = (*it).begin(); subIt != (*it).end(); ++subIt) {
-                stream << " " << (1 + *subIt);
-            }
-            stream << "\n";
-        }
+    // Reuse the single writer so the GUI and CLI produce identical files and
+    // share the same open/write error handling.
+    if (!saveMeshToFile(filename)) {
+        QMessageBox::critical(this, tr("Save failed"),
+            tr("Could not write the mesh to:\n%1").arg(filename));
     }
 }
 
@@ -556,6 +546,18 @@ void MainWindow::updateProgressDetailed(float progress, const QString& status)
 
 MainWindow::~MainWindow()
 {
+    // Any in-flight worker outlives this window; let it finish and clean itself
+    // up on its own thread rather than being deleted here. Qt auto-disconnects
+    // its signals to this (now-destroyed) receiver.
+    if (nullptr != m_quadMeshGenerator)
+        m_quadMeshGenerator->deleteLater();
+    if (nullptr != m_renderMeshGenerator)
+        m_renderMeshGenerator->deleteLater();
+
+    // Result buffers transferred from the worker via take*() are owned here.
+    delete m_remeshedVertices;
+    delete m_remeshedQuads;
+
     g_windows.erase(this);
 }
 
@@ -716,7 +718,9 @@ void MainWindow::renderMeshReady()
 
     qDebug() << "Render mesh ready";
 
-    delete m_renderMeshGenerator;
+    // The worker lives on its own thread; delete it via the event loop rather
+    // than destroying a cross-thread QObject directly. Results are already taken.
+    m_renderMeshGenerator->deleteLater();
     m_renderMeshGenerator = nullptr;
 
     m_modelRenderWidget->updateMesh(renderMesh);
@@ -873,7 +877,9 @@ void MainWindow::quadMeshReady()
     m_saved = false;
     m_inProgress = false;
 
-    delete m_quadMeshGenerator;
+    // Delete the worker via the event loop rather than destroying a cross-thread
+    // QObject directly. Results are already taken above.
+    m_quadMeshGenerator->deleteLater();
     m_quadMeshGenerator = nullptr;
 
     if (nullptr != m_remeshedVertices && nullptr != m_remeshedQuads) {

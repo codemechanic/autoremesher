@@ -305,10 +305,14 @@ void ModelShaderMeshBinder::cleanup()
 {
     if (m_vboTriangle.isCreated())
         m_vboTriangle.destroy();
+    if (m_vaoTriangle.isCreated())
+        m_vaoTriangle.destroy();
     m_wireframeObject.cleanup();
     if (m_toolEnabled) {
         if (m_vboTool.isCreated())
             m_vboTool.destroy();
+        if (m_vaoTool.isCreated())
+            m_vaoTool.destroy();
     }
     delete m_texture;
     m_texture = nullptr;

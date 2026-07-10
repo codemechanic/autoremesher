@@ -492,48 +492,62 @@ bool AutoRemesher::remesh()
                 if (vertices.empty() || triangles.empty())
                     continue;
 
-                ReportProgressContext reportProgressContext;
-                reportProgressContext.islandIndex = i;
-                reportProgressContext.autoRemesher = thread.autoRemesher;
-                geogram_report_progress_tag = &reportProgressContext;
-                geogram_report_progress_round = 0;
-                geogram_report_progress_callback = ReportProgress;
+                // geogram's frame-field / quad_cover can throw on singular or
+                // degenerate islands. Contain the failure to this island so the
+                // rest of the model still remeshes instead of the whole
+                // parallel_for aborting.
+                try {
+                    ReportProgressContext reportProgressContext;
+                    reportProgressContext.islandIndex = i;
+                    reportProgressContext.autoRemesher = thread.autoRemesher;
+                    geogram_report_progress_tag = &reportProgressContext;
+                    geogram_report_progress_round = 0;
+                    geogram_report_progress_callback = ReportProgress;
 
-                thread.autoRemesher->setCurrentStatus(
-                    "Island " + std::to_string(thread.islandIndex + 1) + ": computing normals & frame field...");
-                thread.autoRemesher->updateProgress(thread.islandIndex, 0.3f);
-                thread.parameterizer = new Parameterizer(&vertices,
-                    &triangles,
-                    nullptr);
-                thread.parameterizer->setScaling(thread.island->scaling);
-                thread.parameterizer->setGradientAdaptivity(thread.island->adaptivity);
-                thread.parameterizer->setSharpEdgeDegrees(thread.island->sharpEdgeDegrees);
-                {
-                    GeogramProgressLockGuard lock;
-                    thread.parameterizer->parameterize();
-                }
+                    thread.autoRemesher->setCurrentStatus(
+                        "Island " + std::to_string(thread.islandIndex + 1) + ": computing normals & frame field...");
+                    thread.autoRemesher->updateProgress(thread.islandIndex, 0.3f);
+                    thread.parameterizer = new Parameterizer(&vertices,
+                        &triangles,
+                        nullptr);
+                    thread.parameterizer->setScaling(thread.island->scaling);
+                    thread.parameterizer->setGradientAdaptivity(thread.island->adaptivity);
+                    thread.parameterizer->setSharpEdgeDegrees(thread.island->sharpEdgeDegrees);
+                    {
+                        GeogramProgressLockGuard lock;
+                        thread.parameterizer->parameterize();
+                    }
 
-                auto t1 = std::chrono::high_resolution_clock::now();
-                *m_parameterizeTime += std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+                    auto t1 = std::chrono::high_resolution_clock::now();
+                    *m_parameterizeTime += std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
 
-                thread.autoRemesher->setCurrentStatus(
-                    "Island " + std::to_string(thread.islandIndex + 1) + ": extracting quads...");
-                thread.autoRemesher->updateProgress(thread.islandIndex, 0.9f);
-                std::vector<std::vector<Vector2>>* uvs = thread.parameterizer->takeTriangleUvs();
-                thread.remesher = new QuadExtractor(&vertices,
-                    &triangles,
-                    uvs);
-                if (!thread.remesher->extract()) {
+                    thread.autoRemesher->setCurrentStatus(
+                        "Island " + std::to_string(thread.islandIndex + 1) + ": extracting quads...");
+                    thread.autoRemesher->updateProgress(thread.islandIndex, 0.9f);
+                    std::vector<std::vector<Vector2>>* uvs = thread.parameterizer->takeTriangleUvs();
+                    thread.remesher = new QuadExtractor(&vertices,
+                        &triangles,
+                        uvs);
+                    if (!thread.remesher->extract()) {
+                        delete thread.remesher;
+                        thread.remesher = nullptr;
+                    }
+                    thread.autoRemesher->updateProgress(thread.islandIndex, 1.0f);
+                    thread.autoRemesher->setCurrentStatus(
+                        "Island " + std::to_string(thread.islandIndex + 1) + ": done");
+                    auto t2 = std::chrono::high_resolution_clock::now();
+                    *m_extractTime += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+
+                    delete uvs;
+                } catch (const std::exception& e) {
+                    std::cerr << "Island " << (i + 1) << " failed, skipping: " << e.what() << std::endl;
+                    delete thread.remesher;
+                    thread.remesher = nullptr;
+                } catch (...) {
+                    std::cerr << "Island " << (i + 1) << " failed, skipping (unknown error)" << std::endl;
                     delete thread.remesher;
                     thread.remesher = nullptr;
                 }
-                thread.autoRemesher->updateProgress(thread.islandIndex, 1.0f);
-                thread.autoRemesher->setCurrentStatus(
-                    "Island " + std::to_string(thread.islandIndex + 1) + ": done");
-                auto t2 = std::chrono::high_resolution_clock::now();
-                *m_extractTime += std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-
-                delete uvs;
             }
         }
 
