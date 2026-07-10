@@ -28,10 +28,10 @@ inconsistency in **ISSUE-3** (and to missing deps).
 | 3 | ISSUE-2 | CLI returns exit code 0 on failure | P0 | S | ✅ Fixed (PR #1) |
 | 4 | ISSUE-4 | No CLI input/argument validation | P1 | M | ✅ Fixed |
 | 5 | ISSUE-5 | No automated tests | P1 | M | ✅ Fixed |
-| 6 | ISSUE-7 | `ci/lint.sh` breaks on paths with spaces | P2 | S | Open |
-| 7 | ISSUE-6 | Duplicate `PLATFORM = "Unknown"` in `.pro` | P2 | XS | Open |
-| 8 | ISSUE-8 | README build-doc nits | P2 | S | Open |
-| 9 | ISSUE-11 | Unfilled `%1–%4` placeholders in compact stylesheet | P2 | S | Open |
+| 6 | ISSUE-7 | `ci/lint.sh` breaks on paths with spaces | P2 | S | ✅ Fixed |
+| 7 | ISSUE-6 | Duplicate `PLATFORM = "Unknown"` in `.pro` | P2 | XS | ✅ Fixed |
+| 8 | ISSUE-8 | README build-doc nits | P2 | S | ✅ Fixed |
+| 9 | ISSUE-11 | Unfilled `%1–%4` placeholders in compact stylesheet | P2 | S | ✅ Fixed |
 | 10 | ISSUE-9 | Headless still requires GUI + display | P3 | L | Open |
 | 11 | ISSUE-10 | Large vendored `thirdparty/` in-tree | P3 | L | Open |
 
