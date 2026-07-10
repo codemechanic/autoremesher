@@ -43,8 +43,6 @@ HOMEPAGE_URL = "https://autoremesher.dust3d.org/"
 REPOSITORY_URL = "https://github.com/huxingyi/autoremesher"
 ISSUES_URL = "https://github.com/huxingyi/autoremesher/issues"
 PLATFORM = "Unknown"
-
-PLATFORM = "Unknown"
 macx {
 	PLATFORM = "MacOS"
 }
