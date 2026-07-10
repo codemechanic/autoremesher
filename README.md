@@ -91,6 +91,11 @@ make -j$(sysctl -n hw.logicalcpu)
 > already built (look for `autoremesher.app`). To force a clean rebuild, run
 > `make distclean` first, then re-run `qmake CONFIG+=sdk_no_version_check` and `make`.
 
+> **`ld: warning: building for macOS-11.0, but linking with dylib ... built for newer
+> version`?** Harmless. Homebrew builds TBB for your current macOS while AutoRemesher
+> targets an older minimum, so the linker just notes the mismatch — the build succeeds
+> and the binary runs.
+
 ### Running a quick test
 
 AutoRemesher has a CLI mode for headless processing. Try it with one of the [common-3d-test-models](https://github.com/alecjacobson/common-3d-test-models). Use the binary produced by your build:
