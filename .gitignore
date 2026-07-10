@@ -6,6 +6,8 @@
 *.lo
 *.o
 *.obj
+# ...but keep Wavefront .obj mesh fixtures used by the test suite
+!test/fixtures/*.obj
 
 # Precompiled Headers
 *.gch
