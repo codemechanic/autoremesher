@@ -7,6 +7,7 @@ Unreleased
 - Linux: fix the release build on aarch64/ARM
 - Contain per-island parameterization failures so one degenerate island no longer aborts the whole remesh; fix memory/resource leaks and cross-thread worker teardown
 - Fix crash when remeshing non-manifold meshes (edge shared by more than two faces); merged from upstream
+- macOS: remove a duplicate app-icon bundle rule that caused "overriding commands for target ...autoremesher.icns" warnings during make
 - Quiet verbose CLI diagnostics; warning-clean release build
 - Add a black-box CLI test suite (run via test/run_tests.sh) and a CI test job
 - Document bundled third-party dependencies in thirdparty/README.md
