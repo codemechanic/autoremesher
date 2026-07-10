@@ -246,24 +246,27 @@ int main(int argc, char** argv)
                 // Write a report file if --report was specified
                 if (!params.reportPath.isEmpty()) {
                     QFile reportFile(params.reportPath);
-                    if (reportFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                        QTextStream out(&reportFile);
-                        out << "AutoRemesher Report\n";
-                        out << "===================\n\n";
-                        out << "Input file: " << params.inputPath << "\n";
-                        out << "Output file: " << params.outputPath << "\n";
-                        out << "Target quads: " << params.targetQuads << "\n";
-                        out << "Edge scaling: " << params.edgeScaling << "\n";
-                        out << "Sharp edge degrees: " << params.sharpEdgeDegrees << "\n";
-                        out << "Smooth normal degrees: " << params.smoothNormalDegrees << "\n";
-                        out << "Adaptivity: " << params.adaptivity << "\n\n";
-                        out << "Results:\n";
-                        out << "  Quads: " << quadCount << "\n";
-                        out << "  Non-quads: " << nonQuadCount << "\n";
-                        out << "  Vertices: " << vertexCount << "\n";
-                        out << "  Total time: " << elapsedSeconds << " seconds\n";
-                        reportFile.close();
+                    if (!reportFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                        std::cerr << "Error: cannot write report file: " << params.reportPath.toStdString() << std::endl;
+                        QCoreApplication::exit(1);
+                        return;
                     }
+                    QTextStream out(&reportFile);
+                    out << "AutoRemesher Report\n";
+                    out << "===================\n\n";
+                    out << "Input file: " << params.inputPath << "\n";
+                    out << "Output file: " << params.outputPath << "\n";
+                    out << "Target quads: " << params.targetQuads << "\n";
+                    out << "Edge scaling: " << params.edgeScaling << "\n";
+                    out << "Sharp edge degrees: " << params.sharpEdgeDegrees << "\n";
+                    out << "Smooth normal degrees: " << params.smoothNormalDegrees << "\n";
+                    out << "Adaptivity: " << params.adaptivity << "\n\n";
+                    out << "Results:\n";
+                    out << "  Quads: " << quadCount << "\n";
+                    out << "  Non-quads: " << nonQuadCount << "\n";
+                    out << "  Vertices: " << vertexCount << "\n";
+                    out << "  Total time: " << elapsedSeconds << " seconds\n";
+                    reportFile.close();
                 }
 
                 QCoreApplication::exit(0);

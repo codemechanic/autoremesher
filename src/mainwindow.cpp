@@ -411,18 +411,39 @@ bool MainWindow::loadObj(const QString& filename)
         dest.setZ(attributes.vertices[j++]);
     }
 
+    const size_t vertexCount = m_originalVertices.size();
     m_originalTriangles.clear();
     for (const auto& shape : shapes) {
-        for (size_t i = 0; i < shape.mesh.indices.size(); i += 3) {
-            m_originalTriangles.push_back(std::vector<size_t> {
-                (size_t)shape.mesh.indices[i + 0].vertex_index,
-                (size_t)shape.mesh.indices[i + 1].vertex_index,
-                (size_t)shape.mesh.indices[i + 2].vertex_index });
+        const auto& indices = shape.mesh.indices;
+        // Step by whole triangles; the `+ 3 <=` guard skips a non-triangulated tail.
+        for (size_t i = 0; i + 3 <= indices.size(); i += 3) {
+            const int a = indices[i + 0].vertex_index;
+            const int b = indices[i + 1].vertex_index;
+            const int c = indices[i + 2].vertex_index;
+            // tinyobj resolves OBJ face references (including negative/relative
+            // ones) without clamping, so an out-of-range face yields indices that
+            // would read past m_originalVertices. Reject rather than crash later.
+            if (a < 0 || b < 0 || c < 0
+                || (size_t)a >= vertexCount || (size_t)b >= vertexCount || (size_t)c >= vertexCount) {
+                std::cerr << "Error: " << m_currentFilename.toStdString()
+                          << " contains an out-of-range vertex index" << std::endl;
+                return false;
+            }
+            m_originalTriangles.push_back(std::vector<size_t> { (size_t)a, (size_t)b, (size_t)c });
         }
     }
 
     qDebug() << "m_originalVertices.size():" << m_originalVertices.size();
     qDebug() << "m_originalTriangles.size():" << m_originalTriangles.size();
+
+    // A file can parse successfully yet contain no usable geometry (e.g. only
+    // comments, or vertices with no faces). Feeding that to the remesher leads to
+    // divide-by-zero / hangs downstream, so fail cleanly here.
+    if (m_originalVertices.empty() || m_originalTriangles.empty()) {
+        std::cerr << "Error: " << m_currentFilename.toStdString()
+                  << " has no usable triangle geometry" << std::endl;
+        return false;
+    }
 
     m_renderQueue.push({ m_originalVertices,
         m_originalTriangles });
@@ -718,27 +739,35 @@ void MainWindow::setHeadlessParams(const QString& inputPath, const QString& outp
     m_adaptivity = static_cast<float>(adaptivity);
 }
 
-void MainWindow::saveMeshToFile(const QString& filename)
+bool MainWindow::saveMeshToFile(const QString& filename)
 {
     if (nullptr == m_remeshedVertices || nullptr == m_remeshedQuads)
-        return;
+        return false;
 
     QFile file(filename);
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream stream(&file);
-        stream << "# " << APP_NAME << " " << APP_HUMAN_VER << "\n";
-        stream << "# " << APP_HOMEPAGE_URL << "\n";
-        for (std::vector<AutoRemesher::Vector3>::const_iterator it = m_remeshedVertices->begin(); it != m_remeshedVertices->end(); ++it) {
-            stream << "v " << (*it).x() << " " << (*it).y() << " " << (*it).z() << "\n";
-        }
-        for (std::vector<std::vector<size_t>>::const_iterator it = m_remeshedQuads->begin(); it != m_remeshedQuads->end(); ++it) {
-            stream << "f";
-            for (std::vector<size_t>::const_iterator subIt = (*it).begin(); subIt != (*it).end(); ++subIt) {
-                stream << " " << (1 + *subIt);
-            }
-            stream << "\n";
-        }
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        std::cerr << "Error: cannot open output file for writing: " << filename.toStdString() << std::endl;
+        return false;
     }
+    QTextStream stream(&file);
+    stream << "# " << APP_NAME << " " << APP_HUMAN_VER << "\n";
+    stream << "# " << APP_HOMEPAGE_URL << "\n";
+    for (std::vector<AutoRemesher::Vector3>::const_iterator it = m_remeshedVertices->begin(); it != m_remeshedVertices->end(); ++it) {
+        stream << "v " << (*it).x() << " " << (*it).y() << " " << (*it).z() << "\n";
+    }
+    for (std::vector<std::vector<size_t>>::const_iterator it = m_remeshedQuads->begin(); it != m_remeshedQuads->end(); ++it) {
+        stream << "f";
+        for (std::vector<size_t>::const_iterator subIt = (*it).begin(); subIt != (*it).end(); ++subIt) {
+            stream << " " << (1 + *subIt);
+        }
+        stream << "\n";
+    }
+    stream.flush();
+    if (QTextStream::Ok != stream.status() || QFileDevice::NoError != file.error()) {
+        std::cerr << "Error: failed while writing output file: " << filename.toStdString() << std::endl;
+        return false;
+    }
+    return true;
 }
 
 void MainWindow::runHeadless()
@@ -860,7 +889,10 @@ void MainWindow::quadMeshReady()
 
         if (m_headlessMode) {
             double elapsed = m_headlessTimer.elapsed() / 1000.0;
-            saveMeshToFile(m_headlessOutputPath);
+            if (!saveMeshToFile(m_headlessOutputPath)) {
+                QCoreApplication::exit(1);
+                return;
+            }
             emit headlessFinished(quadCount, nonQuadCount, vertexCount, elapsed);
             return;
         }
