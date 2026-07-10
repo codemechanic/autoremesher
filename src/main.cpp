@@ -203,14 +203,18 @@ int main(int argc, char** argv)
                     }
                 }
 
-                QCoreApplication::quit();
+                QCoreApplication::exit(0);
             });
 
         mainWindow->setHeadlessParams(params.inputPath, params.outputPath,
             params.targetQuads, params.edgeScaling,
             params.sharpEdgeDegrees, params.smoothNormalDegrees,
             params.adaptivity);
-        mainWindow->runHeadless();
+        // Kick off remeshing from inside the event loop. Calling runHeadless()
+        // synchronously here would let its failure paths hit QCoreApplication
+        // before exec() starts, where quit()/exit() are a no-op and the process
+        // would hang forever on a bad input.
+        QTimer::singleShot(0, mainWindow, &MainWindow::runHeadless);
 
         return app.exec();
     }
