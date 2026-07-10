@@ -83,6 +83,12 @@ expect_exit "edge-scaling out of range" 1 --input "$FIXTURES/tetra.obj" --output
 expect_exit "sharp-edge out of range"   1 --input "$FIXTURES/tetra.obj" --output "$WORK/o.obj" --sharp-edge 10
 
 echo
+echo "== Malformed / unusable input and output (must reject, not crash or hang) =="
+expect_exit "out-of-range vertex index" 1 --input "$FIXTURES/bad_index.obj" --output "$WORK/o.obj"
+expect_exit "empty (no geometry) input" 1 --input "$FIXTURES/empty.obj" --output "$WORK/o.obj"
+expect_exit "unwritable output path"    1 --input "$FIXTURES/tetra.obj" --output "$WORK/no_such_dir/o.obj" --target-quads 200
+
+echo
 echo "== Valid remesh (must succeed, exit 0, and produce a quad mesh) =="
 for fixture in tetra octahedron; do
     out="$WORK/${fixture}_out.obj"
