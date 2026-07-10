@@ -25,11 +25,11 @@ win32 {
 }
 
 macx {
+	# Setting ICON is enough: qmake copies it into Contents/Resources and
+	# references it from Info.plist. A separate QMAKE_BUNDLE_DATA entry for the
+	# same file produced a duplicate make rule ("overriding commands for target
+	# .../autoremesher.icns").
 	ICON = autoremesher.icns
-
-	RESOURCE_FILES.files = $$ICON
-	RESOURCE_FILES.path = Contents/Resources
-	QMAKE_BUNDLE_DATA += RESOURCE_FILES
 }
 
 isEmpty(HUMAN_VERSION) {
